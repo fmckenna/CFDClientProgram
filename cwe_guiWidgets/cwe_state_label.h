@@ -6,7 +6,7 @@
 ** Redistribution and use in source and binary forms, with or without modification,
 ** are permitted provided that the following conditions are met:
 **
-** 1. Redistributions of source code must retain the above copyright notice, this 
+** 1. Redistributions of source code must retain the above copyright notice, this
 ** list of conditions and the following disclaimer.
 **
 ** 2. Redistributions in binary form must reproduce the above copyright notice, this
@@ -31,39 +31,30 @@
 ***********************************************************************************/
 
 // Contributors:
+// Written by Peter Sempolinski, for the Natural Hazard Modeling Laboratory, director: Ahsan Kareem, at Notre Dame
 
-#include "cwe_create_simulation.h"
-#include "ui_cwe_create_simulation.h"
+#ifndef CWE_STATE_LABEL_H
+#define CWE_STATE_LABEL_H
 
-CWE_create_simulation::CWE_create_simulation(QWidget *parent) :
-    QWidget(parent),
-    ui(new Ui::CWE_create_simulation)
+#include <QObject>
+#include <QWidget>
+#include <QLabel>
+
+enum class CaseState;
+class CFDcaseInstance;
+
+class cwe_state_label : public QLabel
 {
-    ui->setupUi(this);
-}
+    Q_OBJECT
+public:
+    cwe_state_label(QWidget *parent);
+    void setCurrentCase(CFDcaseInstance * newCase);
 
-CWE_create_simulation::~CWE_create_simulation()
-{
-    delete ui;
-}
+public slots:
+    void setNewState(CaseState, CaseState newState);
 
+private:
+    CFDcaseInstance * currentCase = NULL;
+};
 
-void CWE_create_simulation::on_pb_upload_file_clicked()
-{
-    /* upload selected graphics file */
-}
-
-void CWE_create_simulation::on_pb_2D_slice_clicked()
-{
-
-}
-
-void CWE_create_simulation::on_pb_full_3D_clicked()
-{
-
-}
-
-void CWE_create_simulation::on_pb_get_info_clicked()
-{
-
-}
+#endif // CWE_STATE_LABEL_H

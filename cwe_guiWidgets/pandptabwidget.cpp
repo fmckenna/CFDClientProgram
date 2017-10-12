@@ -4,6 +4,8 @@
 #include "cwe_withstatusbutton.h"
 #include "CFDanalysis/CFDcaseInstance.h"
 
+#include "qdebug.h"
+
 PandPTabWidget::PandPTabWidget(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::PandPTabWidget)
@@ -14,6 +16,9 @@ PandPTabWidget::PandPTabWidget(QWidget *parent) :
     groupTabList    = new QMap<QString, QTabWidget *>();
     varTabWidgets   = new QMap<QString, QMap<QString, QWidget *> *>();
     variableWidgets = new QMap<QString, InputDataType *>();
+
+    this->setButtonMode(CWE_BTN_ALL);
+    //this->setButtonMode(CWE_BTN_NONE);
 }
 
 PandPTabWidget::~PandPTabWidget()
@@ -67,17 +72,17 @@ int PandPTabWidget::addGroupTab(QString key, const QString &label, StageState cu
     return index;
 }
 
-int PandPTabWidget::addVarTab(QString key, const QString &label, QJsonArray *varList, QJsonObject *varsInfo)
+int PandPTabWidget::addVarTab(QString key, const QString &label, QJsonArray *varList, QJsonObject *varsInfo, QMap<QString,QString> * setVars)
 {
     int index = addVarTab(key, label);
     if (index >= 0)
     {
-        addVarsToTab(key, label, varList, varsInfo);
+        addVarsToTab(key, label, varList, varsInfo, setVars);
     }
     return index;
 }
 
-void PandPTabWidget::addVarsToTab(QString key, const QString &label, QJsonArray *varList, QJsonObject *varsInfo)
+void PandPTabWidget::addVarsToTab(QString key, const QString &label, QJsonArray *varList, QJsonObject *varsInfo, QMap<QString,QString> * setVars)
 {
     //QTabWidget *groupTab = groupTabList->value(key);
     //QWidget    *varTab   = varTabWidgets->value(key)->value(label);
@@ -86,7 +91,17 @@ void PandPTabWidget::addVarsToTab(QString key, const QString &label, QJsonArray 
     {
         QString varKey = item.toString();
         QJsonObject variableObject = (*varsInfo)[varKey].toObject();
-        this->addVariable(varKey, variableObject, key, label);
+        QString setVal;
+
+        if (setVars->contains(varKey))
+        {
+            setVal = setVars->value(varKey);
+            this->addVariable(varKey, variableObject, key, label, &setVal);
+        }
+        else
+        {
+            this->addVariable(varKey, variableObject, key, label, NULL);
+        }
     }
     this->addVSpacer(key, label);
 }
@@ -117,10 +132,12 @@ void PandPTabWidget::addVarsData(QJsonObject JSONgroup, QJsonObject JSONvars)
 
 }
 
-QWidget * PandPTabWidget::addStd(QJsonObject JSONvar, QWidget *parent)
+QWidget * PandPTabWidget::addStd(QJsonObject JSONvar, QWidget *parent, QString *setVal)
 {
     QVariant defaultOption = JSONvar["default"].toVariant();
     QString unit           = JSONvar["unit"].toString();
+    // QJson fails to convert "1" to int, thus: QString::toInt( QJson::toString() )
+    int precision          = JSONvar["precision"].toString().toInt();
 
     QLabel *theName = new QLabel(parent);
     QString displayname = JSONvar["displayname"].toString();
@@ -128,8 +145,17 @@ QWidget * PandPTabWidget::addStd(QJsonObject JSONvar, QWidget *parent)
     theName->setMinimumHeight(16);
     //theName->setSizePolicy(QSizePolicy::MinimumExpanding,QSizePolicy::MinimumExpanding);
 
-    QDoubleSpinBox *theValue = new QDoubleSpinBox(parent);
-    theValue->setValue(defaultOption.toDouble());
+    QWidget * theValue;
+
+    if (precision > 0) {
+        theValue = new QDoubleSpinBox(parent);
+        ((QDoubleSpinBox *)theValue)->setValue(defaultOption.toDouble());
+        ((QDoubleSpinBox *)theValue)->setDecimals(precision);
+    }
+    else {
+        theValue = new QSpinBox(parent);
+        ((QSpinBox *)theValue)->setValue(defaultOption.toInt());
+    }
 
     QLabel *theUnit = new QLabel(parent);
     theUnit->setText(unit);
@@ -143,14 +169,21 @@ QWidget * PandPTabWidget::addStd(QJsonObject JSONvar, QWidget *parent)
     return theValue;
 }
 
-QWidget * PandPTabWidget::addBool(QJsonObject JSONvar, QWidget *parent)
+QWidget * PandPTabWidget::addBool(QJsonObject JSONvar, QWidget *parent, QString * setVal)
 {
     QLabel *theName = new QLabel(parent);
     QString displayname = JSONvar["displayname"].toString();
     theName->setText(displayname);
 
     QCheckBox *theBox = new QCheckBox(parent);
-    theBox->setChecked(JSONvar["default"].toBool());
+    if (setVal == NULL)
+    {
+        theBox->setChecked(JSONvar["default"].toBool());
+    }
+    else
+    {
+        theBox->setChecked(setVal);
+    }
 
     QGridLayout *layout = (QGridLayout*)(parent->layout());
     int row = layout->rowCount();
@@ -160,7 +193,7 @@ QWidget * PandPTabWidget::addBool(QJsonObject JSONvar, QWidget *parent)
     return theBox;
 }
 
-QWidget * PandPTabWidget::addFile(QJsonObject JSONvar, QWidget *parent)
+QWidget * PandPTabWidget::addFile(QJsonObject JSONvar, QWidget *parent, QString * setVal)
 {
     QLabel *theName = new QLabel(parent);
     QString displayname = JSONvar["displayname"].toString();
@@ -177,7 +210,7 @@ QWidget * PandPTabWidget::addFile(QJsonObject JSONvar, QWidget *parent)
     return theFileName;
 }
 
-QWidget * PandPTabWidget::addChoice(QJsonObject JSONvar, QWidget *parent)
+QWidget * PandPTabWidget::addChoice(QJsonObject JSONvar, QWidget *parent, QString * setVal)
 {
     QLabel *theName = new QLabel(parent);
     QString displayname = JSONvar["displayname"].toString();
@@ -194,7 +227,14 @@ QWidget * PandPTabWidget::addChoice(QJsonObject JSONvar, QWidget *parent)
         theModel->appendRow(itm);
     }
     theSelection->setModel(theModel);
-    theSelection->setCurrentText(combo_options[JSONvar["default"].toString()].toString());
+    if ((setVal == NULL) || (!combo_options.contains(*setVal)))
+    {
+        theSelection->setCurrentText(combo_options[JSONvar["default"].toString()].toString());
+    }
+    else
+    {
+        theSelection->setCurrentText(combo_options[*setVal].toString());
+    }
 
     QGridLayout *layout = (QGridLayout*)(parent->layout());
     int row = layout->rowCount();
@@ -205,27 +245,27 @@ QWidget * PandPTabWidget::addChoice(QJsonObject JSONvar, QWidget *parent)
 }
 
 
-QWidget * PandPTabWidget::addVector3D(QJsonObject JSONvar, QWidget *parent )
+QWidget * PandPTabWidget::addVector3D(QJsonObject JSONvar, QWidget *parent, QString *setVal )
 {
     return NULL;
 }
 
-QWidget * PandPTabWidget::addVector2D(QJsonObject JSONvar, QWidget *parent )
+QWidget * PandPTabWidget::addVector2D(QJsonObject JSONvar, QWidget *parent, QString *setVal )
 {
     return NULL;
 }
 
-QWidget * PandPTabWidget::addTensor3D(QJsonObject JSONvar, QWidget *parent )
+QWidget * PandPTabWidget::addTensor3D(QJsonObject JSONvar, QWidget *parent, QString *setVal )
 {
     return NULL;
 }
 
-QWidget * PandPTabWidget::addTensor2D(QJsonObject JSONvar, QWidget *parent )
+QWidget * PandPTabWidget::addTensor2D(QJsonObject JSONvar, QWidget *parent, QString *setVal )
 {
     return NULL;
 }
 
-QWidget * PandPTabWidget::addUnknown(QJsonObject JSONvar, QWidget *parent)
+QWidget * PandPTabWidget::addUnknown(QJsonObject JSONvar, QWidget *parent, QString *setVal)
 {
     QLabel *theName = new QLabel(parent);
     QString displayname = JSONvar["displayname"].toString();
@@ -238,22 +278,21 @@ QWidget * PandPTabWidget::addUnknown(QJsonObject JSONvar, QWidget *parent)
     return NULL;
 }
 
-void PandPTabWidget::addType(const QString &varName, const QString &type, QJsonObject JSONvar, QWidget *parent)
+void PandPTabWidget::addType(const QString &varName, const QString &type, QJsonObject JSONvar, QWidget *parent, QString *setVal)
 {
     QWidget *widget;
-    QString val;
 
     widget = NULL;
 
-    if      (type == "std")      { widget = this->addStd(JSONvar, parent); }
-    else if (type == "bool")     { widget = this->addBool(JSONvar, parent); }
-    else if (type == "file")     { widget = this->addFile(JSONvar, parent); }
-    else if (type == "choose")   { widget = this->addChoice(JSONvar, parent); }
-    else if (type == "vector2D") { widget = this->addVector2D(JSONvar, parent); }
-    else if (type == "tensor2D") { widget = this->addTensor2D(JSONvar, parent); }
-    else if (type == "vector3D") { widget = this->addVector3D(JSONvar, parent); }
-    else if (type == "tensor3D") { widget = this->addTensor3D(JSONvar, parent); }
-    else                         { widget = this->addUnknown(JSONvar, parent); }
+    if      (type == "std")      { widget = this->addStd(JSONvar, parent, setVal); }
+    else if (type == "bool")     { widget = this->addBool(JSONvar, parent, setVal); }
+    else if (type == "file")     { widget = this->addFile(JSONvar, parent, setVal); }
+    else if (type == "choose")   { widget = this->addChoice(JSONvar, parent, setVal); }
+    else if (type == "vector2D") { widget = this->addVector2D(JSONvar, parent, setVal); }
+    else if (type == "tensor2D") { widget = this->addTensor2D(JSONvar, parent, setVal); }
+    else if (type == "vector3D") { widget = this->addVector3D(JSONvar, parent, setVal); }
+    else if (type == "tensor3D") { widget = this->addTensor3D(JSONvar, parent, setVal); }
+    else                         { widget = this->addUnknown(JSONvar, parent, setVal); }
 
     // store information for reset operations, data collection, and validation
     InputDataType *varData = new InputDataType;
@@ -271,7 +310,7 @@ void PandPTabWidget::addType(const QString &varName, const QString &type, QJsonO
     variableWidgets->insert(varName, varData);
 }
 
-bool PandPTabWidget::addVariable(QString varName, QJsonObject JSONvar, const QString &key, const QString &label)
+bool PandPTabWidget::addVariable(QString varName, QJsonObject JSONvar, const QString &key, const QString &label, QString * setVal)
 {
     QString type = JSONvar["type"].toString();
     if (type == "") {
@@ -282,7 +321,7 @@ bool PandPTabWidget::addVariable(QString varName, QJsonObject JSONvar, const QSt
         QWidget *parent = varTabWidgets->value(key)->value(label);
         if (parent != NULL)
         {
-            this->addType(varName, type, JSONvar, parent);
+            this->addType(varName, type, JSONvar, parent, setVal);
             return true;
         }
         else { return false; }
@@ -329,7 +368,8 @@ void PandPTabWidget::setWidget(QWidget *w)
 
 void PandPTabWidget::on_pbtn_run_clicked()
 {
-
+    // enable the cancel button
+    this->setButtonMode(CWE_BTN_CANCEL);
 }
 
 QMap<QString, QString> PandPTabWidget::collectParamData()
@@ -376,22 +416,37 @@ QMap<QString, QString> PandPTabWidget::collectParamData()
 
 void PandPTabWidget::on_pbtn_cancel_clicked()
 {
+    // initiate job cancellation
 
+    // enable the run button
+    this->setButtonMode(CWE_BTN_RUN);
 }
 
 void PandPTabWidget::on_pbtn_results_clicked()
 {
+    // set run and rollback button active
+    this->setButtonMode(CWE_BTN_RESULTS|CWE_BTN_ROLLBACK);
 
+    // switch to the results tab
+    emit switchToResultsTab();
 }
 
 void PandPTabWidget::on_pbtn_rollback_clicked()
 {
+    // reset the interface
 
+    // set run button active
+    this->setButtonMode(CWE_BTN_RUN);
 }
 
 void PandPTabWidget::on_groupTabSelected(int idx)
 {
     this->setIndex(idx);
+
+    // check for status of tab #idx
+
+    // set button state accordingly
+    this->setButtonMode(CWE_BTN_RUN);
 }
 
 QString PandPTabWidget::getStateText(StageState theState)
@@ -407,4 +462,22 @@ QString PandPTabWidget::getStateText(StageState theState)
     if (theState == StageState::UNRUN)
         return "Not Yet Run";
     return "*** TOTAL ERROR ***";
+}
+
+void PandPTabWidget::setButtonMode(uint mode)
+{
+    bool btnState;
+
+    btnState = (mode & CWE_BTN_RUN)?true:false;
+    ui->pbtn_run->setEnabled(btnState);
+
+    btnState = (mode & CWE_BTN_CANCEL)?true:false;
+    ui->pbtn_cancel->setEnabled(btnState);
+
+    btnState = (mode & CWE_BTN_RESULTS)?true:false;
+    ui->pbtn_results->setEnabled(btnState);
+
+    btnState = (mode & CWE_BTN_ROLLBACK)?true:false;
+    ui->pbtn_rollback->setEnabled(btnState);
+
 }

@@ -26,7 +26,12 @@ CWE_Parameters::CWE_Parameters(QWidget *parent) :
     ui(new Ui::CWE_Parameters)
 {
     ui->setupUi(this);
-}
+
+    QObject::connect(ui->theTabWidget, SIGNAL(switchToParameterTab()), this, SLOT(switchToParameterSlot()));
+    QObject::connect(ui->theTabWidget, SIGNAL(switchToCreateTab()),    this, SLOT(switchToCreateSlot())   );
+    QObject::connect(ui->theTabWidget, SIGNAL(switchToResultsTab()),   this, SLOT(switchToResultsSlot())  );
+
+    }
 
 CWE_Parameters::~CWE_Parameters()
 {
@@ -62,6 +67,8 @@ void CWE_Parameters::resetViewInfo()
     QJsonObject    varGroups  = obj["varGroups"].toObject();
     QJsonObject    vars       = obj["vars"].toObject();
 
+    QMap<QString,QString> setVars = currentCase->getCurrentParams();
+
     //QJsonArray    results    = obj["results"].toArray();
 
     //qDebug() << stageNames;
@@ -86,7 +93,7 @@ void CWE_Parameters::resetViewInfo()
         {
             QString subTitle = item.toString();
             QJsonArray varList = varGroups[subTitle].toArray();
-            ui->theTabWidget->addVarTab(name, subTitle, &varList, &vars);
+            ui->theTabWidget->addVarTab(name, subTitle, &varList, &vars, &setVars);
         }
 
         cnt++;
@@ -119,3 +126,17 @@ void CWE_Parameters::newCaseState(CaseState oldState, CaseState newState)
     //TODO: implement functions for changes in current params or stage states
 }
 
+void CWE_Parameters::switchToResultsSlot()
+{
+    emit switchToResultsTab();
+}
+
+void CWE_Parameters::switchToParameterSlot()
+{
+    emit switchToParameterTab();
+}
+
+void CWE_Parameters::switchToCreateSlot()
+{
+    emit switchToCreateTab();
+}

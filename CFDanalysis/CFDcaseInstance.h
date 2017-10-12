@@ -40,18 +40,35 @@
 #include <QMap>
 #include <QStringList>
 
-//For debug:
+#include <QJsonDocument>
+#include <QJsonArray>
+#include <QJsonObject>
+
 #include <QTimer>
 
 class FileTreeNode;
 class CFDanalysisType;
 class EasyBoolLock;
 class JobOperator;
+class RemoteJobData;
 
 class VWTinterfaceDriver;
 
 enum class StageState {UNRUN, RUNNING, FINISHED, LOADING, ERROR};
-enum class CaseState {LOADING, INVALID, READY, DEFUNCT, ERROR, AGAVE_INVOKE};
+//Stages:
+//UNRUN: Parameters changeable, RUN button active
+//LOADING: Parameters frozen(visible), no buttons
+//RUNNING: Parameters frozen(visible), CANCEL button active
+//FINISHED: Parameters frozen(visible), RESULTS button active, ROOLBACK button Active
+//ERROR: ROLLBACK/RESET only thing available
+//TODO: Need a SAFE cleanup and repaint for parameters screen
+
+enum class CaseState {LOADING, INVALID, READY, DEFUNCT, ERROR, AGAVE_INVOKE, AGAVE_RELOAD, AGAVE_RUN};
+//3 things to wait for:
+//1) Waiting on file loading - LOADING
+//2) Waiting on Agave actions - AGAVE_INVOKE
+//3) Waiting on Agave apps list to reload - AGAVE_RELOAD
+//4) Waiting on Agave apps - AGAVE_RUN
 
 class CFDcaseInstance : public QObject
 {
@@ -75,7 +92,7 @@ public:
     void createCase(QString newName, FileTreeNode * containingFolder);
     void changeParameters(QMap<QString, QString> paramList);
     void mesh(FileTreeNode * geoFile = NULL); //Leave NULL if not used
-    void rollBack(QStringList stagesToDelete);
+    void rollBack(QString stageToDelete);
     void openFOAM();
     void postProcess();
 
@@ -85,16 +102,19 @@ signals:
     void detachCase();
     void haveNewState(CaseState oldState, CaseState newState);
 
-public slots:
-    void forceInfoRefresh();
-
 private slots:
     void underlyingFilesUpdated();
+    void jobListUpdated();
+    void remoteCommandDone();
+
     void caseFolderRemoved();
-    void agaveAppDone();
 
 private:
-    void emitNewState();
+    void emitNewState(CaseState newState);
+
+    void demandFolderSearch();
+
+    QMap<QString, RemoteJobData * > getRelevantJobs();
 
     bool defunct = false;
     CaseState oldState = CaseState::LOADING;

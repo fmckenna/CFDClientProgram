@@ -42,7 +42,7 @@
 
 #include "cwe_guiWidgets/cwe_defines.h"
 #include "cwe_guiWidgets/cwe_landing.h"
-#include "cwe_guiWidgets/cwe_create_simulation.h"
+#include "cwe_guiWidgets/cwe_create_simulation_old.h"
 #include "cwe_guiWidgets/cwe_file_manager.h"
 #include "cwe_guiWidgets/cwe_manage_simulation.h"
 #include "cwe_guiWidgets/cwe_simulation_details.h"
@@ -58,6 +58,7 @@ class CWE_MainWindow;
 }
 
 class CFDcaseInstance;
+class cwe_state_label;
 
 class CWE_MainWindow : public QMainWindow
 {
@@ -67,6 +68,7 @@ public:
     explicit CWE_MainWindow(VWTinterfaceDriver *newDriver, QWidget *parent = 0);
     ~CWE_MainWindow();
 
+    void runOfflineSetupSteps();
     void runSetupSteps();
 
     void attachCaseSignals(CFDcaseInstance * newCase);
@@ -74,6 +76,9 @@ public:
 private slots:
     void tabChanged(int);
     void newActiveCase();
+    void switchToParameterTab();
+    void switchToResultsTab();
+    void switchToCreateTab();
 
     void menuExit();
     void menuCopyInfo();
@@ -96,9 +101,11 @@ private slots:
 
 private:
     Ui::CWE_MainWindow *ui;
+    int switchToTab(int idx);
 
     VWTinterfaceDriver     *myDriver;
     RemoteDataInterface    *dataLink;
+    cwe_state_label        *stateLabel = NULL;
 };
 
 #endif // CWE_MAINWINDOW_H

@@ -33,7 +33,8 @@
 # Contributors:
 # Written by Peter Sempolinski, for the Natural Hazard Modeling Laboratory, director: Ahsan Kareem, at Notre Dame
 
-QT       += core gui network
+QT += core gui network
+QT += quickwidgets
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -61,7 +62,6 @@ SOURCES += main.cpp \
     visualUtils/cfdtoken.cpp \
     visualUtils/decompresswrapper.cpp \
     mainWindow/cwe_mainwindow.cpp \
-    cwe_guiWidgets/cwe_create_simulation.cpp \
     cwe_guiWidgets/cwe_file_manager.cpp \
     cwe_guiWidgets/cwe_help.cpp \
     cwe_guiWidgets/cwe_landing.cpp \
@@ -88,7 +88,13 @@ SOURCES += main.cpp \
     cwe_guiWidgets/cwe_parametertab.cpp \
     cwe_guiWidgets/pandptabwidget.cpp \
     cwe_guiWidgets/cwe_withstatusbutton.cpp \
-    CFDanalysis/CFDcaseInstance.cpp
+    CFDanalysis/CFDcaseInstance.cpp \
+    cwe_guiWidgets/cwe_create_simulation_old.cpp \
+    cwe_guiWidgets/cwe_create_copy_simulation.cpp \
+    cwe_guiWidgets/cwe_busyindicator.cpp \
+    cwe_guiWidgets/cwe_debug_widget.cpp \
+    ../AgaveExplorer/remoteFileOps/remotejobentry.cpp \
+    cwe_guiWidgets/cwe_state_label.cpp
 
 HEADERS  += \
     vwtinterfacedriver.h \
@@ -102,7 +108,6 @@ HEADERS  += \
     visualUtils/cfdtoken.h \
     visualUtils/decompresswrapper.h \
     mainWindow/cwe_mainwindow.h \
-    cwe_guiWidgets/cwe_create_simulation.h \
     cwe_guiWidgets/cwe_defines.h \
     cwe_guiWidgets/cwe_file_manager.h \
     cwe_guiWidgets/cwe_help.h \
@@ -130,11 +135,16 @@ HEADERS  += \
     cwe_guiWidgets/cwe_parametertab.h \
     cwe_guiWidgets/pandptabwidget.h \
     cwe_guiWidgets/cwe_withstatusbutton.h \
-    CFDanalysis/CFDcaseInstance.h
+    CFDanalysis/CFDcaseInstance.h \
+    cwe_guiWidgets/cwe_create_simulation_old.h \
+    cwe_guiWidgets/cwe_create_copy_simulation.h \
+    cwe_guiWidgets/cwe_busyindicator.h \
+    cwe_guiWidgets/cwe_debug_widget.h \
+    ../AgaveExplorer/remoteFileOps/remotejobentry.h \
+    cwe_guiWidgets/cwe_state_label.h
 
 FORMS    += \
     mainWindow/cwe_mainwindow.ui \
-    cwe_guiWidgets/cwe_create_simulation.ui \
     cwe_guiWidgets/cwe_file_manager.ui \
     cwe_guiWidgets/cwe_help.ui \
     cwe_guiWidgets/cwe_landing.ui \
@@ -149,11 +159,16 @@ FORMS    += \
     ../AgaveExplorer/utilFuncs/singlelinedialog.ui \
     cwe_guiWidgets/cwe_parametertab.ui \
     cwe_guiWidgets/pandptabwidget.ui \
-    cwe_guiWidgets/cwe_withstatusbutton.ui
+    cwe_guiWidgets/cwe_withstatusbutton.ui \
+    cwe_guiWidgets/cwe_create_simulation_old.ui \
+    cwe_guiWidgets/cwe_create_copy_simulation.ui \
+    cwe_guiWidgets/cwe_busyindicator.ui \
+    cwe_guiWidgets/cwe_debug_widget.ui
 
 RESOURCES += \
     cwe_resources.qrc \
     ../AgaveExplorer/SimCenterCommon/commonResources.qrc \
     CFDanalysis/config/cfdconfig.qrc
 
-DISTFILES +=
+DISTFILES += \
+    QML/BusyIndicatorDef.qml

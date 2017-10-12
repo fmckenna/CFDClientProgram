@@ -32,43 +32,38 @@
 
 // Contributors:
 
-#ifndef CWE_MANAGE_SIMULATION_H
-#define CWE_MANAGE_SIMULATION_H
+#include "cwe_create_simulation_old.h"
+#include "ui_cwe_create_simulation_old.h"
 
-#include <QWidget>
-#include "cwe_defines.h"
-
-class FileTreeNode;
-class VWTinterfaceDriver;
-
-namespace Ui {
-class CWE_manage_simulation;
+CWE_create_simulation::CWE_create_simulation(QWidget *parent) :
+    QWidget(parent),
+    ui(new Ui::CWE_create_simulation)
+{
+    ui->setupUi(this);
 }
 
-class CWE_manage_simulation : public QWidget
+CWE_create_simulation::~CWE_create_simulation()
 {
-    Q_OBJECT
+    delete ui;
+}
 
-public:
-    explicit CWE_manage_simulation(QWidget *parent = 0);
-    ~CWE_manage_simulation();
 
-    void linkDriver(VWTinterfaceDriver * theDriver);
+void CWE_create_simulation::on_pb_upload_file_clicked()
+{
+    /* upload selected graphics file */
+}
 
-private slots:
-    void newFileSelected(FileTreeNode * newFile);
+void CWE_create_simulation::on_pb_2D_slice_clicked()
+{
 
-    void on_pb_viewParameters_clicked();
+}
 
-    void on_pb_viewResults_clicked();
+void CWE_create_simulation::on_pb_full_3D_clicked()
+{
 
-signals:
-    void needParamTab();
+}
 
-private:
-    Ui::CWE_manage_simulation *ui;
+void CWE_create_simulation::on_pb_get_info_clicked()
+{
 
-    VWTinterfaceDriver * driverLink = NULL;
-};
-
-#endif // CWE_MANAGE_SIMULATION_H
+}

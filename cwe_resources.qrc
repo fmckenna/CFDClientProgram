@@ -10,9 +10,14 @@
         <file>images/CWE_download.png</file>
         <file>images/CWE_eye.png</file>
         <file>images/CWE_empty.png</file>
+        <file>images/placeholderIcon.png</file>
+        <file>images/defaultCaseImage.png</file>
     </qresource>
     <qresource prefix="/">
         <file>copyText.txt</file>
         <file>cweStyle.qss</file>
+    </qresource>
+    <qresource prefix="/qml">
+        <file>QML/BusyIndicatorDef.qml</file>
     </qresource>
 </RCC>

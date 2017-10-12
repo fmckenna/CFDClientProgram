@@ -56,18 +56,27 @@ VWTinterfaceDriver::VWTinterfaceDriver(QObject *parent) : AgaveSetupDriver(paren
 
     //The following are being debuged:
     tmpHandle->registerAgaveAppInfo("FileEcho", "fileEcho-0.1.0",{"directory","NewFile", "EchoText"},{},"directory");
-    tmpHandle->registerAgaveAppInfo("PythonTest", "pythonRun-0.1.0",{"directory","NewFile"},{},"directory");
-    tmpHandle->registerAgaveAppInfo("SectionMesh", "sectionMesh-0.1.0",{"SlicePlane"},{"directory","SGFFile","SimParams"},"SGFFile");
-    tmpHandle->registerAgaveAppInfo("tempCFD","tempCFD-2.4.0",{"solver"},{"inputDirectory"},"inputDirectory");
-
-    tmpHandle->registerAgaveAppInfo("twoDslice", "twoDslice-0.1.0", {"SlicePlane", "SimParams", "NewCaseFolder"},{"SGFFile"}, "SGFFile");
-    tmpHandle->registerAgaveAppInfo("twoDUmesh", "twoDUmesh-0.1.0", {"MeshParams","directory"},{}, "directory");
+    tmpHandle->registerAgaveAppInfo("cwe-create", "cwe-create-0.1.0", {"directory", "newFolder", "template"}, {}, "directory");
+    tmpHandle->registerAgaveAppInfo("cwe-update", "cwe-update-0.1.0", {"directory", "params"}, {}, "directory");
+    tmpHandle->registerAgaveAppInfo("cwe-exec-serial", "cwe-exec-serial-0.1.0", {"directory", "action", "infile"}, {}, "directory");
+    tmpHandle->registerAgaveAppInfo("cwe-sim", "cwe-sim-2.4.0", {}, {"solver", "directory"}, "directory");
+    tmpHandle->registerAgaveAppInfo("cwe-delete", "cwe-delete-0.1.0", {"directory", "step"}, {}, "directory");
 
     theConnector = (RemoteDataInterface *) tmpHandle;
     QObject::connect(theConnector, SIGNAL(sendFatalErrorMessage(QString)), this, SLOT(fatalInterfaceError(QString)));
 
-    CFDanalysisType * newTemplate = new CFDanalysisType(":/config/building2D.json");
-    templateList.append(newTemplate);
+    /* populate tab_NewCase with available cases */
+    QDir confDir(":/config");
+    QStringList filters;
+    filters << "*.json" << "*.JSON";
+    QStringList caseTypeFiles = confDir.entryList(filters);
+
+    foreach (QString caseConfigFile, caseTypeFiles) {
+        QString confPath = ":/config/";
+        confPath = confPath.append(caseConfigFile);
+        CFDanalysisType * newTemplate = new CFDanalysisType(confPath);
+        templateList.append(newTemplate);
+    }
 }
 
 void VWTinterfaceDriver::startup()
@@ -94,7 +103,6 @@ void VWTinterfaceDriver::closeAuthScreen()
     mainWindow->runSetupSteps();
     mainWindow->show();
 
-    //The dynamics of this are different in windows. TODO: Find a more cross-platform solution
     QObject::connect(mainWindow->windowHandle(),SIGNAL(visibleChanged(bool)),this, SLOT(subWindowHidden(bool)));
 
     if (authWindow != NULL)
@@ -115,6 +123,7 @@ void VWTinterfaceDriver::startOffline()
 
     setCurrentCase(new CFDcaseInstance(templateList.at(0),this));
 
+    mainWindow->runOfflineSetupSteps();
     mainWindow->show();
 
     QObject::connect(mainWindow->windowHandle(),SIGNAL(visibleChanged(bool)),this, SLOT(subWindowHidden(bool)));
